@@ -30,7 +30,7 @@ kla = 0.23          # s^-1 (O2 liquide)
 kla2 = 3.5          # s^-1 (gaz pour espèces ≠ O2)
 
 Vheadspace = 50.0 / 1000.0   # m^3
-
+PN2 = 10.0 * 100000.0        # Pa
 
 # ======== Enthalpies de vaporisation (J/mol) ========
 Hvap_CA = 28943.0
@@ -45,4 +45,15 @@ M_CA = 76.53e-3
 M_HP = 34e-3
 M_Ep = 92.53e-3
 M_W  = 18e-3
+
+# ======== Conditions initiales ========
+def initial_state():
+    # [CA, HP, Ep, RO, W, O2_liq, nO2_gas, nCA_gas, nHP_gas, nEp_gas, nW_gas, mr, Tr, P]
+    return np.array([7.26, 9.15, 0.0, 0.0, 7.41, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mr0, Tr0, PN2], dtype=float)
+
+# ---------- Grille de simulation ----------
+def time_grid():
+    t_span = (0.0, 50000.0)
+    t_eval = np.linspace(t_span[0], t_span[1], 501)
+    return t_span, t_eval
 
