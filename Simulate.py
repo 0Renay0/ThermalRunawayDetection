@@ -139,6 +139,15 @@ def run():
     plt.tight_layout()
     plt.show()
 
+    # Plan de phase  P over T
+    plt.figure(figsize=(7, 6))
+    plt.plot(data["Tr_C"].to_numpy(), data["Pression_ideal_bar"].to_numpy(), lw=2)
+    plt.xlabel("Reactor Tempreature (°C)")
+    plt.ylabel("Pressure (bar)")
+    plt.title("Phase plane: Pressure over Temperature")
+    plt.grid(True)
+    plt.show()
+
     return data, sol
 
 
