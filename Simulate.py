@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 import Config as cfg
 from ode_model import rhs
@@ -101,6 +102,43 @@ def run():
         data.to_excel(writer, sheet_name="Sheet1", index=False)
 
     # print(data.head())
+    t = data["Time"].to_numpy()
+    # plot Results
+
+    fig, axs = plt.subplots(2, 2)
+    axs[0, 0].plot(t, data["CA"].to_numpy(), "b+", label="CA")
+    axs[0, 0].plot(t, data["HP"].to_numpy(), "r+", label="HP")
+    axs[0, 0].plot(t, data["RO"].to_numpy(), "y+", label="RO")
+    axs[0, 0].plot(t, data["Ep"].to_numpy(), "g+", label="Ep")
+    axs[0, 0].plot(t, data["W"].to_numpy(), "m+", label="W")
+    axs[0, 0].set_xlabel("Time (s)")
+    axs[0, 0].set_ylabel("Concentration (mol/L)")
+    axs[0, 0].set_title("Concentrations over time")
+    axs[0, 0].legend(loc="upper right")
+
+    axs[0, 1].plot(t, data["Tr_C"].to_numpy(), "b+", label="Tr")
+    axs[0, 1].set_xlabel("Time (s)")
+    axs[0, 1].set_ylabel("Temperature (°C)")
+    axs[0, 1].legend(loc="upper right")
+    axs[0, 1].set_title("Temperature over time")
+
+    axs[1, 0].plot(t, data["Pression_ideal_bar"].to_numpy(), "r2", label="Pressure")
+    axs[1, 0].plot(t, data["VP_mix_bar"].to_numpy(), "b2", label="Vapor Pressure")
+    axs[1, 0].set_xlabel("Time (s)")
+    axs[1, 0].set_ylabel("Pressure (bar)")
+    axs[1, 0].legend(loc="upper right")
+    axs[1, 0].set_title("Pressure over time")
+
+    axs[1, 1].plot(t, data["qrx_W"].to_numpy(), "m2", label="Heat from reactions")
+    axs[1, 1].plot(t, data["qexch_W"].to_numpy(), "m2", label="Heat exchanged")
+    axs[1, 1].set_xlabel("Time (s)")
+    axs[1, 1].set_ylabel("Heat (W)")
+    axs[1, 1].legend(loc="upper right")
+    axs[1, 1].set_title("Heat over time")
+
+    plt.tight_layout()
+    plt.show()
+
     return data, sol
 
 
