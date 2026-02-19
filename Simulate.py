@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 import Config as cfg
 from ode_model import rhs
+from AnomalyDetection import detect_anomalies
 
 
 def postprocess(sol):
@@ -147,6 +148,21 @@ def run():
     plt.title("Phase plane: Pressure over Temperature")
     plt.grid(True)
     plt.show()
+
+    # Anomalies detection
+    data, det = detect_anomalies(
+        data,
+        time_col="Time",
+        T_col="Tr_K",  # colonne température en Kelvin dans ton DataFrame
+        P_col="Pression_ideal_bar",  # pression idéale calculée
+        baseline_end_s=1000,
+        Contamination=0.005,
+        persist_k=3,
+        win=15,
+    )
+
+    print("Seuil anomaly_score =", det["threshold"])
+    print("Temps détection anomalie =", det["t_detect_s"])
 
     return data, sol
 
