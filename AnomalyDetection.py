@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def compute_RCI(t, T, P_bar, eps=1e-12):
@@ -38,3 +39,22 @@ def compute_RCI(t, T, P_bar, eps=1e-12):
         "v": v,
         "RCI": RCI,
     }
+
+
+def make_window_features(df, cols, win=15):
+    """
+    Features fenetre glissante
+    """
+
+    feats = {}
+    for c in cols:
+        s = df[c].astype(float)
+
+        feats[f"{c}_mean"] = s.rolling(win, center=True, min_periods=win).mean()
+        feats[f"{c}_std"] = s.rolling(win, center=True, min_periods=win).std()
+        feats[f"{c}_max"] = s.rolling(win, center=True, min_periods=win).max()
+        feats[f"{c}_min"] = s.rolling(win, center=True, min_periods=win).min()
+
+        feats[f"{c}_sclope"] = (s.shift(-win // 2) - s.shift(win // 2)) / win
+
+    return pd.DataFrame(feats, index=df.index).dropna()
