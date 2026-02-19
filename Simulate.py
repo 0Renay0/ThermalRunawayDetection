@@ -155,7 +155,7 @@ def run():
         time_col="Time",
         T_col="Tr_K",  # colonne température en Kelvin dans ton DataFrame
         P_col="Pression_ideal_bar",  # pression idéale calculée
-        baseline_end_s=1000,
+        baseline_end_s=3000,
         Contamination=0.005,
         persist_k=3,
         win=15,
@@ -163,6 +163,37 @@ def run():
 
     print("Seuil anomaly_score =", det["threshold"])
     print("Temps détection anomalie =", det["t_detect_s"])
+
+    fig_det, axs_det = plt.subplots(2, 1, figsize=(8, 8))
+
+    # --- subplot 1 : anomaly score ---
+    axs_det[0].plot(
+        data["Time"].to_numpy(), data["anomaly_score"].to_numpy(), label="Anomaly score"
+    )
+
+    axs_det[0].axhline(det["threshold"], linestyle="--", label="Threshold")
+
+    axs_det[0].set_xlabel("Time (s)")
+    axs_det[0].set_ylabel("Score")
+    axs_det[0].set_title("Anomaly score over time")
+    axs_det[0].legend()
+    axs_det[0].grid(True)
+
+    # --- subplot 2 : phase plane coloré par anomalies ---
+    axs_det[1].scatter = axs_det[1].scatter(
+        data["Tr_C"].to_numpy(),
+        data["Pression_ideal_bar"].to_numpy(),
+        c=data["anomaly_flag"].to_numpy(),
+        s=15,
+    )
+
+    axs_det[1].set_xlabel("Reactor Temperature (°C)")
+    axs_det[1].set_ylabel("Pressure (bar)")
+    axs_det[1].set_title("Phase plane with anomaly detection")
+    axs_det[1].grid(True)
+
+    plt.tight_layout()
+    plt.show()
 
     return data, sol
 

@@ -68,7 +68,7 @@ def detect_anomalies(
     T_col="Tr_K",
     P_col="Pression_ideal_bar",
     win=15,
-    baseline_end_s=1000,
+    baseline_end_s=3000,
     Contamination=0.1,
     persist_k=3,
     random_state=0,
