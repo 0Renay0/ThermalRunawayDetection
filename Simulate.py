@@ -1,0 +1,108 @@
+import numpy as np
+import pandas as pd
+from scipy.integrate import solve_ivp
+import Config as cfg
+from ode_model import rhs
+
+
+def postprocess(sol):
+    t = sol.t
+    y = sol.y
+
+    CA, HP, Ep, RO, W = y[0], y[1], y[2], y[3], y[4]
+    O2_liq = y[5]
+    nO2_gas, nCA_gas, nHP_gas, nEp_gas, nW_gas = y[6], y[7], y[8], y[9], y[10]
+    mr, Tr, P = y[11], y[12], y[13]
+
+    P_bar = P / 100000.0
+
+    # N2 constant at t=0 (comme ton script)
+    nN2_gas_0 = (cfg.PN2 * cfg.Vheadspace) / (cfg.Rg * cfg.Tr0)
+
+    # Pression (bar) (Ideal gas law)
+    P_ideal = (
+        (nO2_gas + nCA_gas + nHP_gas + nEp_gas + nW_gas + nN2_gas_0)
+        * cfg.Rg
+        * Tr
+        / cfg.Vheadspace
+    ) / 100000.0
+
+    # VP (Pa) -> bar
+    VP_W = 10 ** (11.008 - (2239.7 / Tr))
+    VP_HP = 10 ** (9.9669 - (2175.0 / Tr))
+    VP_CA = 10 ** (9.7621 - (1511.9 / Tr))
+    VP_Ep = 10 ** (10.671 - (2182.2 / Tr))
+    VP_Diol = 10 ** (12.266 - (3455.4 / Tr))
+
+    VP_mix = (
+        (W * VP_W + HP * VP_HP + CA * VP_CA + Ep * VP_Ep + RO * VP_Diol)
+        / (W + HP + CA + Ep + RO + O2_liq)
+    ) / 100000.0
+
+    # Rates
+    k1_T = cfg.k01_100 * np.exp((-cfg.Ea1 / cfg.Rg) * ((1.0 / Tr) - (1.0 / 373.15)))
+    k2_T = cfg.k02_100 * np.exp((-cfg.Ea2 / cfg.Rg) * ((1.0 / Tr) - (1.0 / 373.15)))
+    k3_T = cfg.k03_100 * np.exp((-cfg.Ea3 / cfg.Rg) * ((1.0 / Tr) - (1.0 / 373.15)))
+
+    rate1 = k1_T * CA * HP
+    rate2 = k2_T * (HP**2)
+    rate3 = k3_T * Ep * W
+
+    qrx = (
+        -rate1 * cfg.H1 * (mr / cfg.rho)
+        - rate2 * cfg.H2 * (mr / cfg.rho)
+        - rate3 * cfg.H3 * (mr / cfg.rho)
+    )
+    qexch = cfg.UA * (cfg.Tj - Tr)
+
+    df = pd.DataFrame(
+        {
+            "Time": t,
+            "CA": CA,
+            "HP": HP,
+            "Ep": Ep,
+            "RO": RO,
+            "W": W,
+            "O2_liq_mol/L": O2_liq,
+            "O2_gas_mol": nO2_gas,
+            "CA_gas_mol": nCA_gas,
+            "HP_gas_mol": nHP_gas,
+            "Ep_gas_mol": nEp_gas,
+            "W_gas_mol": nW_gas,
+            "N2_gas_mol": nN2_gas_0,
+            "m_kg": mr,
+            "Pression_ODE_bar": P_bar,
+            "Pression_ideal_bar": P_ideal,
+            "VP_mix_bar": VP_mix,
+            "Rate1": rate1,
+            "Rate2": rate2,
+            "Rate3": rate3,
+            "qrx_W": qrx,
+            "qexch_W": qexch,
+            "Tr_K": Tr,
+            "Tr_C": Tr - cfg.Tconv,
+            "Ratio_Ep_CA0": Ep / 7.26,
+        }
+    )
+    return df
+
+
+def run():
+    t_span, t_eval = cfg.time_grid()
+    y0 = cfg.initial_state()
+
+    sol = solve_ivp(rhs, t_span, y0, method="BDF", t_eval=t_eval)
+
+    data = postprocess(sol)
+
+    # export data
+    out_xlsx = "Ver2_Question6.xlsx"
+    with pd.ExcelWriter(out_xlsx, engine="xlsxwriter") as writer:
+        data.to_excel(writer, sheet_name="Sheet1", index=False)
+
+    # print(data.head())
+    return data, sol
+
+
+if __name__ == "__main__":
+    run()
