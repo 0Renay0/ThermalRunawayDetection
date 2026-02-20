@@ -6,6 +6,7 @@ import Config as cfg
 from ode_model import rhs
 from AnomalyDetection import detect_anomalies
 from hub_jones import detect_hub_jones
+from strozzi_zaldivar import detect_strozzi_zaldivar
 
 
 def postprocess(sol):
@@ -156,10 +157,10 @@ def run():
         time_col="Time",
         T_col="Tr_K",  # colonne température en Kelvin dans ton DataFrame
         P_col="Pression_ideal_bar",  # pression idéale calculée
-        baseline_end_s=1200,
+        baseline_end_s=500,
         Contamination=0.005,
         persist_k=3,
-        win=15,
+        win=7,
     )
 
     print("Seuil anomaly_score =", det["threshold"])
@@ -204,6 +205,16 @@ def run():
     )
 
     print("Hub & Jones detection time =", t_hj)
+
+    # ===============================
+    # Strozzi & Zaldívar criterion
+    # ===============================
+    data, t_sz, idx_sz = detect_strozzi_zaldivar(
+        data, time_col="Time", T_col="Tr_K", reactant_col="CA", reactant_initial=7.26
+    )
+
+    print("Strozzi & Zaldivar detection time =", t_sz)
+
     return data, sol
 
 
