@@ -111,7 +111,7 @@ def run():
     axs[0, 0].plot(t, data["HP"].to_numpy(), "r+", label="HP")
     axs[0, 0].plot(t, data["RO"].to_numpy(), "y+", label="RO")
     axs[0, 0].plot(t, data["Ep"].to_numpy(), "g+", label="Ep")
-    axs[0, 0].plot(t, data["W"].to_numpy(), "m+", label="W")
+    # axs[0, 0].plot(t, data["W"].to_numpy(), "m+", label="W")
     axs[0, 0].set_xlabel("Time (s)")
     axs[0, 0].set_ylabel("Concentration (mol/L)")
     axs[0, 0].set_title("Concentrations over time")
@@ -142,7 +142,7 @@ def run():
 
     # Plan de phase  P over T
     plt.figure(figsize=(7, 6))
-    plt.plot(data["Tr_C"].to_numpy(), data["Pression_ideal_bar"].to_numpy(), lw=2)
+    plt.scatter(data["Tr_C"].to_numpy(), data["Pression_ideal_bar"].to_numpy(), lw=2)
     plt.xlabel("Reactor Tempreature (°C)")
     plt.ylabel("Pressure (bar)")
     plt.title("Phase plane: Pressure over Temperature")
@@ -155,7 +155,7 @@ def run():
         time_col="Time",
         T_col="Tr_K",  # colonne température en Kelvin dans ton DataFrame
         P_col="Pression_ideal_bar",  # pression idéale calculée
-        baseline_end_s=1000,
+        baseline_end_s=1200,
         Contamination=0.005,
         persist_k=3,
         win=15,

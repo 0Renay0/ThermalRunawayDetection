@@ -7,7 +7,7 @@ from sklearn.preprocessing import RobustScaler
 def compute_RCI(t, T, P_bar, eps=1e-12):
     """
     We compute dT/dt, d2T/dt2, dP/dt, d2P/dt2, curvature, the speed v and RCI
-    In firther work we will add filtering and smoothing of the data to reduce noise.
+    In further work we will add filtering and smoothing of the data to reduce noise.
     """
 
     t = np.asarray(t, dtype=float)
@@ -22,11 +22,11 @@ def compute_RCI(t, T, P_bar, eps=1e-12):
 
     # Curvature of (T(t), P(t))
     num = np.abs(dT * d2P - dP * d2T)
-    den = (dT**2 + dP**2) ** 1.5 + eps
+    den = (dT**2 + dP**2) ** 1.5 + eps  # eps avoid division by zero
     kappa = num / den
 
     # Speed in (T, P) space
-    v = np.sqrt(dT**2 + dP**2 + eps)
+    v = np.sqrt(dT**2 + dP**2)
 
     # RCI
     pos_d2T = np.maximum(d2T, 0)
@@ -133,7 +133,7 @@ def detect_anomalies(
     anomaly_score = -normal_score
 
     # Thresholding for baseline
-    thr = np.quantile(anomaly_score[mask_base], 0.95)
+    thr = np.quantile(anomaly_score[mask_base], 0.9)
 
     flag = (anomaly_score > thr).astype(int)
     flag_persist = (
