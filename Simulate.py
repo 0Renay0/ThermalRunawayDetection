@@ -5,6 +5,7 @@ from scipy.integrate import solve_ivp
 import Config as cfg
 from ode_model import rhs
 from AnomalyDetection import detect_anomalies
+from hub_jones import detect_hub_jones
 
 
 def postprocess(sol):
@@ -195,6 +196,14 @@ def run():
     plt.tight_layout()
     plt.show()
 
+    # ===================================
+    # Detection by Hub & Jones criterion
+    # ===================================
+    data, t_hj, idx_hj = detect_hub_jones(
+        data, time_col="Time", T_col="Tr_K", Tw_value=cfg.Tj
+    )
+
+    print("Hub & Jones detection time =", t_hj)
     return data, sol
 
 
