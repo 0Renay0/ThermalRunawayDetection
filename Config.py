@@ -16,7 +16,7 @@ H3 = -5000.0
 
 # ======== CI & paramètres physiques ========
 Rg = 8.314  # J/mol/K
-UA = 2.0  # W/K
+UA = 10.0  # W/K
 Cpr = 2500.0  # J/kg/K
 mr0 = 90.0  # kg
 rho = 1.0  # kg/L (tel que utilisé dans ton code)
