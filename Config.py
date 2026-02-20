@@ -22,11 +22,11 @@ mr0 = 90.0  # kg
 rho = 1.0  # kg/L (tel que utilisé dans ton code)
 
 Tconv = 273.15
-Tr0 = 65.0 + Tconv  # K
+Tr0 = 95.0 + Tconv  # K
 Tj = Tr0  # K
 
 kla = 0.23  # s^-1 (O2 liquide)
-kla2 = 3.5  # s^-1 (gaz pour espèces ≠ O2)
+kla2 = 3.5  # s^-1 (gaz pour espèces =\ O2)
 
 Vheadspace = 50.0 / 1000.0  # m^3
 PN2 = 10.0 * 100000.0  # Pa

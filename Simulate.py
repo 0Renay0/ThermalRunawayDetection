@@ -155,7 +155,7 @@ def run():
         time_col="Time",
         T_col="Tr_K",  # colonne température en Kelvin dans ton DataFrame
         P_col="Pression_ideal_bar",  # pression idéale calculée
-        baseline_end_s=3000,
+        baseline_end_s=1000,
         Contamination=0.005,
         persist_k=3,
         win=15,
