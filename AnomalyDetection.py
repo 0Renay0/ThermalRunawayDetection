@@ -133,9 +133,10 @@ def detect_anomalies(
     anomaly_score = -normal_score
 
     # Thresholding for baseline
-    thr = np.quantile(anomaly_score[mask_base], 0.99)
+    thr = np.quantile(anomaly_score[mask_base], 0.95)
 
     flag = (anomaly_score > thr).astype(int)
+    flag[mask_base] = 0
     flag_persist = (
         pd.Series(flag, index=X.index).rolling(persist_k).sum() >= persist_k
     ).astype(int)
@@ -144,6 +145,7 @@ def detect_anomalies(
     df.loc[X.index, "anomaly_score"] = anomaly_score
 
     df["anomaly_flag"] = 0
+
     df.loc[X.index, "anomaly_flag"] = flag_persist.values
 
     t_detect = df.loc[df["anomaly_flag"] == 1, time_col].min()

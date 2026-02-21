@@ -155,15 +155,19 @@ def run():
     plt.show()
 
     # Anomalies detection
+    print("Time head:", data["Time"].head(10).to_list())
+    print("Time min/max:", data["Time"].min(), data["Time"].max())
+    print("dt median:", data["Time"].diff().median())
+
     data, det = detect_anomalies(
         data,
         time_col="Time",
         T_col="Tr_K",  # colonne température en Kelvin dans ton DataFrame
         P_col="Pression_ideal_bar",  # pression idéale calculée
-        baseline_end_s=15000.0,
-        Contamination=0.003,
+        baseline_end_s=8000.0,
+        Contamination=0.01,
         persist_k=3,
-        win=7,
+        win=11,
     )
 
     print("Seuil anomaly_score =", det["threshold"])
