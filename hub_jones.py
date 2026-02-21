@@ -32,11 +32,28 @@ def detect_hub_jones(df, time_col="Time", T_col="Tr_K", Tw_col=None, Tw_value=No
 
     flag = (d2Tdt2 > 0) & (dDeltaTdt > 0)
 
+    # ---- Patch for the begning points ----
+    n = len(flag)
+    if n > 0:
+        # bords (np.gradient unilatéral)
+        flag[0] = False
+        flag[-1] = False
+
+        # warm-up : ignorer les 5 premiers pas de temps pour éviter les faux positifs liés au démarrage
+        if n >= 2:
+            dt = np.median(np.diff(t))
+            # 5 pas de temps => 5*dt en secondes; on masque via temps
+            warmup_end = t[0] + 5 * dt
+            flag[t <= warmup_end] = False
+        else:
+            flag[:] = False
+    # ------------------------------------
+
     df["HJ_flag"] = flag
 
     if np.any(flag):
-        idx = np.argmax(flag)
-        t_detect = t[idx]
+        idx = int(np.argmax(flag))
+        t_detect = float(t[idx])
     else:
         idx = None
         t_detect = None
