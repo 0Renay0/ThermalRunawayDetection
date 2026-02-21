@@ -43,16 +43,32 @@ def detect_strozzi_zaldivar(
     dXdt = np.gradient(X, t)
     d2Xdt2 = np.gradient(dXdt, t)
 
-    div = (d2Xdt2 / dXdt) + (d2Tdt2 / dTdt)
+    # ---- avoid inf/nan caused by division by 0 ----
+    div = np.full_like(t, np.nan, dtype=float)
+    ok = (dTdt != 0.0) & (dXdt != 0.0)
+    div[ok] = (d2Xdt2[ok] / dXdt[ok]) + (d2Tdt2[ok] / dTdt[ok])
 
     flag = div > 0
+
+    # ---- Patch for the begning points ----
+    n = len(flag)
+    if n > 0:
+        flag[0] = False
+        flag[-1] = False
+        if n >= 2:
+            dt = np.median(np.diff(t))
+            warmup_end = t[0] + 5 * dt
+            flag[t <= warmup_end] = False
+        else:
+            flag[:] = False
+    # --------------------------------------
 
     df["div_SZ"] = div
     df["SZ_flag"] = flag
 
     if np.any(flag):
-        idx = np.argmax(flag)
-        t_detect = t[idx]
+        idx = int(np.argmax(flag))
+        t_detect = float(t[idx])
     else:
         idx = None
         t_detect = None
