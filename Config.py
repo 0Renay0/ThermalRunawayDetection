@@ -60,3 +60,18 @@ def time_grid():
     t_span = (0.0, 50000.0)
     t_eval = np.linspace(t_span[0], t_span[1], 501)
     return t_span, t_eval
+
+
+# ================================
+#      Scenarios de défauts
+# ================================
+
+# ======== Fault: arrêt du refroidissement ========
+cooling_stop_s = 10000.0  # None for nominal
+
+
+def UA_eff(t: float) -> float:
+    """UA effectif (refroidissement ON avant cooling_stop_s, OFF après)."""
+    if cooling_stop_s is None:
+        return UA
+    return UA if t < cooling_stop_s else 0.0

@@ -89,7 +89,7 @@ def rhs(t, c):
         (-R1 * vol_liq_L * cfg.H1)
         + (-R2 * vol_liq_L * cfg.H2)
         + (-R3 * vol_liq_L * cfg.H3)
-        + cfg.UA * (cfg.Tj - Tr)
+        + cfg.UA_eff(t) * (cfg.Tj - Tr)
         - qevapo
     ) / (mr * cfg.Cpr)
 

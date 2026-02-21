@@ -57,7 +57,10 @@ def postprocess(sol):
         - rate2 * cfg.H2 * (mr / cfg.rho)
         - rate3 * cfg.H3 * (mr / cfg.rho)
     )
-    qexch = cfg.UA * (cfg.Tj - Tr)
+
+    # qexch = cfg.UA * (cfg.Tj - Tr)
+    UA_t = np.array([cfg.UA_eff(tt) for tt in t], dtype=float)
+    qexch = UA_t * (cfg.Tj - Tr)
 
     df = pd.DataFrame(
         {
@@ -157,8 +160,8 @@ def run():
         time_col="Time",
         T_col="Tr_K",  # colonne température en Kelvin dans ton DataFrame
         P_col="Pression_ideal_bar",  # pression idéale calculée
-        baseline_end_s=500,
-        Contamination=0.005,
+        baseline_end_s=15000.0,
+        Contamination=0.003,
         persist_k=3,
         win=7,
     )

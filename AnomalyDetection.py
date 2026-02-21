@@ -133,7 +133,7 @@ def detect_anomalies(
     anomaly_score = -normal_score
 
     # Thresholding for baseline
-    thr = np.quantile(anomaly_score[mask_base], 0.9)
+    thr = np.quantile(anomaly_score[mask_base], 0.99)
 
     flag = (anomaly_score > thr).astype(int)
     flag_persist = (
