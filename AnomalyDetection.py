@@ -137,8 +137,8 @@ def detect_anomalies(
 
     flag = (anomaly_score > thr).astype(int)
     flag[mask_base] = 0
-    gate_T = df.loc[X.index, "dTdt"].to_numpy(dtype=float) > 0.0
-    gate_P = df.loc[X.index, "dPdt"].to_numpy(dtype=float) > 0.0
+    gate_T = df.loc[X.index, "d2Tdt2"].to_numpy(dtype=float) > 0.0
+    gate_P = df.loc[X.index, "d2Pdt2"].to_numpy(dtype=float) > 0.0
     gate = gate_T | gate_P
     flag = flag * gate.astype(int)
 
