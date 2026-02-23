@@ -50,7 +50,7 @@ M_W = 18e-3
 def initial_state():
     # [CA, HP, Ep, RO, W, O2_liq, nO2_gas, nCA_gas, nHP_gas, nEp_gas, nW_gas, mr, Tr, P]
     return np.array(
-        [7.26, 9.15, 0.0, 0.0, 7.41, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mr0, Tr0, PN2],
+        [7.26, 9.15, 0.0, 0.0, 7.41, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mr0, Tr0_F(), PN2],
         dtype=float,
     )
 
@@ -75,3 +75,12 @@ def UA_eff(t: float) -> float:
     if cooling_stop_s is None:
         return UA
     return UA if t < cooling_stop_s else 10.0
+
+
+# ======== Fault: Wrong initial temperature ========
+Tr0_fault = 110  # None for nominal
+
+
+def Tr0_F():
+    """Température initiale (Tr0) pour le scénario de défaut."""
+    return (Tr0_fault + Tconv) if Tr0_fault is not None else Tr0
