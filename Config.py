@@ -67,11 +67,11 @@ def time_grid():
 # ================================
 
 # ======== Fault: arrêt du refroidissement ========
-cooling_stop_s = 10000  # None for nominal
+cooling_stop_s = None  # None for nominal
 
 
 def UA_eff(t: float) -> float:
     """UA effectif (refroidissement ON avant cooling_stop_s, OFF après)."""
     if cooling_stop_s is None:
         return UA
-    return UA if t < cooling_stop_s else 0.0
+    return UA if t < cooling_stop_s else 10.0

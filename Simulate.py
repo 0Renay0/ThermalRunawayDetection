@@ -164,10 +164,10 @@ def run():
         time_col="Time",
         T_col="Tr_K",  # colonne température en Kelvin dans ton DataFrame
         P_col="Pression_ideal_bar",  # pression idéale calculée
-        baseline_end_s=8000.0,
+        baseline_end_s=7000.0,
         Contamination=0.01,
-        persist_k=3,
-        win=11,
+        persist_k=1,
+        win=15,
     )
 
     print("Seuil anomaly_score =", det["threshold"])
