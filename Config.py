@@ -50,7 +50,22 @@ M_W = 18e-3
 def initial_state():
     # [CA, HP, Ep, RO, W, O2_liq, nO2_gas, nCA_gas, nHP_gas, nEp_gas, nW_gas, mr, Tr, P]
     return np.array(
-        [7.26, 9.15, 0.0, 0.0, 7.41, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mr0, Tr0_F(), PN2],
+        [
+            CF_CA0,
+            CF_HP0,
+            0.0,
+            0.0,
+            7.41,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            mr0,
+            Tr0_F(),
+            PN2,
+        ],
         dtype=float,
     )
 
@@ -62,9 +77,9 @@ def time_grid():
     return t_span, t_eval
 
 
-# ================================
-#      Scenarios de défauts
-# ================================
+# ====================================================================
+#                      Scenarios de défauts
+# ====================================================================
 
 # ======== Fault: arrêt du refroidissement ========
 cooling_stop_s = None  # None for nominal
@@ -84,3 +99,20 @@ Tr0_fault = 110  # None for nominal
 def Tr0_F():
     """Température initiale (Tr0) pour le scénario de défaut."""
     return (Tr0_fault + Tconv) if Tr0_fault is not None else Tr0
+
+
+# ======== Fault: Wrong initial Concentration ========
+CF_CA0 = None  # None for nominal
+
+
+def CA0_F():
+    """Concentration initiale de CA pour le scénario de défaut."""
+    return CF_CA0 if CF_CA0 is not None else 7.26
+
+
+CF_HP0 = None  # None for nominal
+
+
+def HP0_F():
+    """Concentration initiale de HP pour le scénario de défaut."""
+    return CF_HP0 if CF_HP0 is not None else 9.15
