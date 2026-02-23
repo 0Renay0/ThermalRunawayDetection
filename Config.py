@@ -51,8 +51,8 @@ def initial_state():
     # [CA, HP, Ep, RO, W, O2_liq, nO2_gas, nCA_gas, nHP_gas, nEp_gas, nW_gas, mr, Tr, P]
     return np.array(
         [
-            CF_CA0,
-            CF_HP0,
+            CA0_F(),
+            HP0_F(),
             0.0,
             0.0,
             7.41,
@@ -93,7 +93,7 @@ def UA_eff(t: float) -> float:
 
 
 # ======== Fault: Wrong initial temperature ========
-Tr0_fault = 110  # None for nominal
+Tr0_fault = None  # None for nominal
 
 
 def Tr0_F():
@@ -102,7 +102,7 @@ def Tr0_F():
 
 
 # ======== Fault: Wrong initial Concentration ========
-CF_CA0 = None  # None for nominal
+CF_CA0 = 8.26  # None for nominal
 
 
 def CA0_F():
@@ -110,7 +110,7 @@ def CA0_F():
     return CF_CA0 if CF_CA0 is not None else 7.26
 
 
-CF_HP0 = None  # None for nominal
+CF_HP0 = 10.15  # None for nominal
 
 
 def HP0_F():
