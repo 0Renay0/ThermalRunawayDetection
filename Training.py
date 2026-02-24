@@ -16,8 +16,8 @@ pretrained = fit_nominal_model(
     T_col="Tr_K",
     P_col="Pression_ideal_bar",
     win=15,
-    contamination=0.001,
-    thr_quantile=0.99,
+    contamination=0.0001,
+    thr_quantile=0.95,
     random_state=0,
 )
 
