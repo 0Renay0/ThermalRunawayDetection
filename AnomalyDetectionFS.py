@@ -97,3 +97,37 @@ def fit_nominal_model(
         "win": win,
         "cols": {"time_col": time_col, "T_col": T_col, "P_col": P_col},
     }
+
+
+def detect_with_pretrained(
+    data: pd.DataFrame,
+    pretrained: dict,
+    persist_k=3,
+):
+    time_col = pretrained["cols"]["time_col"]
+    T_col = pretrained["cols"]["T_col"]
+    P_col = pretrained["cols"]["P_col"]
+    win = pretrained["win"]
+    iso = pretrained["model"]
+    scaler = pretrained["scaler"]
+    thr = pretrained["threshold"]
+
+    df, X = build_features(data, time_col=time_col, T_col=T_col, P_col=P_col, win=win)
+    X_all = scaler.transform(X.to_numpy())
+    anomaly_score = -iso.score_samples(X_all)
+
+    flag = (anomaly_score > thr).astype(int)
+
+    flag_persist = (
+        pd.Series(flag, index=X.index).rolling(persist_k).sum() >= persist_k
+    ).astype(int)
+
+    df["anomaly_score"] = np.nan
+    df.loc[X.index, "anomaly_score"] = anomaly_score
+    df["anomaly_flag"] = 0
+    df.loc[X.index, "anomaly_flag"] = flag_persist.values
+
+    t_detect = df.loc[df["anomaly_flag"] == 1, time_col].min()
+    t_detect = None if pd.isna(t_detect) else float(t_detect)
+
+    return df, {"threshold": thr, "t_detect_s": t_detect, "X": X}
