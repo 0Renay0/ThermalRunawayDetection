@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from AnomalyDetection import compute_RCI, make_windows_features
+from AnomalyDetection import compute_RCI, make_window_features
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import RobustScaler
 
@@ -42,7 +42,7 @@ def build_features(
         "v_TP",
         "RCI",
     ]
-    X = make_windows_features(df, base_cols, win=win)
+    X = make_window_features(df, base_cols, win=win)
 
     tp_corr = df[T_col].rolling(win, center=True, min_periods=win).corr(df[P_col])
     X["TP_corr"] = tp_corr.loc[X.index]

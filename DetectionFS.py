@@ -2,9 +2,9 @@ import pandas as pd
 import joblib
 from AnomalyDetectionFS import detect_with_pretrained
 
-pretrained = joblib.load("nominal_model.joblib")
+pretrained = joblib.load("pretrained_model.joblib")
 
-df_fault = pd.read_csv("./scenarios/fault_case_01.csv")
+df_fault = pd.read_csv("./Data/Faults/fault_case_01.csv")
 
 df_res, det = detect_with_pretrained(df_fault, pretrained, persist_k=3)
 
