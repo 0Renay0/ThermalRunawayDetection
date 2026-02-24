@@ -82,14 +82,14 @@ def time_grid():
 # ====================================================================
 
 # ======== Fault: arrêt du refroidissement ========
-cooling_stop_s = None  # None for nominal
+cooling_stop_s = 10000  # None for nominal
 
 
 def UA_eff(t: float) -> float:
     """UA effectif (refroidissement ON avant cooling_stop_s, OFF après)."""
     if cooling_stop_s is None:
         return UA
-    return UA if t < cooling_stop_s else 10.0
+    return UA if t < cooling_stop_s else 5
 
 
 # ======== Fault: Wrong initial temperature ========
@@ -102,7 +102,7 @@ def Tr0_F():
 
 
 # ======== Fault: Wrong initial Concentration ========
-CF_CA0 = 8.26  # None for nominal
+CF_CA0 = None  # None for nominal
 
 
 def CA0_F():
@@ -115,4 +115,4 @@ CF_HP0 = 10.15  # None for nominal
 
 def HP0_F():
     """Concentration initiale de HP pour le scénario de défaut."""
-    return CF_HP0 if CF_HP0 is not None else 9.15
+    return CF_HP0 if CF_HP0 is not None else 10.15

@@ -57,7 +57,7 @@ def fit_nominal_model(
     P_col="Pression_ideal_bar",
     win=15,
     baseline_end_s=None,
-    contamination=0.1,
+    contamination=0.0001,
     random_state=0,
     thr_quantile=0.95,
 ):

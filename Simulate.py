@@ -103,9 +103,10 @@ def run():
     data = postprocess(sol)
 
     # export data
-    out_xlsx = "Ver2_Question6.xlsx"
+    """out_xlsx = "Ver2_Question6.xlsx"
     with pd.ExcelWriter(out_xlsx, engine="xlsxwriter") as writer:
-        data.to_excel(writer, sheet_name="Sheet1", index=False)
+        data.to_excel(writer, sheet_name="Sheet1", index=False)"""
+    data.to_csv("simulated_data.csv", index=False)
 
     # print(data.head())
     t = data["Time"].to_numpy()
