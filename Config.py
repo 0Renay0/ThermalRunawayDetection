@@ -89,11 +89,11 @@ def UA_eff(t: float) -> float:
     """UA effectif (refroidissement ON avant cooling_stop_s, OFF après)."""
     if cooling_stop_s is None:
         return UA
-    return UA if t < cooling_stop_s else 5
+    return UA if t < cooling_stop_s else 2
 
 
 # ======== Fault: Wrong initial temperature ========
-Tr0_fault = None  # None for nominal
+Tr0_fault = 95  # None for nominal
 
 
 def Tr0_F():
@@ -110,7 +110,7 @@ def CA0_F():
     return CF_CA0 if CF_CA0 is not None else 7.26
 
 
-CF_HP0 = 10.15  # None for nominal
+CF_HP0 = None  # None for nominal
 
 
 def HP0_F():

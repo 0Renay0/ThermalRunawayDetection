@@ -103,6 +103,7 @@ def detect_with_pretrained(
     data: pd.DataFrame,
     pretrained: dict,
     persist_k=3,
+    warmup_s=1000.0,
 ):
     time_col = pretrained["cols"]["time_col"]
     T_col = pretrained["cols"]["T_col"]
@@ -112,14 +113,23 @@ def detect_with_pretrained(
     scaler = pretrained["scaler"]
     thr = pretrained["threshold"]
 
+    print("Using pretrained model with threshold =", thr)
+    print("Warmup time (s) =", warmup_s)
+    print("win =", win)
+
     df, X = build_features(data, time_col=time_col, T_col=T_col, P_col=P_col, win=win)
     X_all = scaler.transform(X.to_numpy())
     anomaly_score = -iso.score_samples(X_all)
 
     flag = (anomaly_score > thr).astype(int)
 
+    # warm up
+    tX = df.loc[X.index, time_col].to_numpy()
+    flag[tX <= warmup_s] = 0
+
     flag_persist = (
-        pd.Series(flag, index=X.index).rolling(persist_k).sum() >= persist_k
+        pd.Series(flag, index=X.index).rolling(persist_k, min_periods=persist_k).sum()
+        >= persist_k
     ).astype(int)
 
     df["anomaly_score"] = np.nan
