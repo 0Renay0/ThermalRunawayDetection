@@ -43,12 +43,12 @@ def compute_RCI(t, T, P_bar, eps=1e-12):
     }
 
 
-def make_window_features(df, cols, win=15):
-    """
-    Features fenetre glissante
-    """
-
+def make_window_features(df, cols, win=15, time_col=None):
     feats = {}
+    t = None
+    if time_col is not None:
+        t = df[time_col].astype(float)
+
     for c in cols:
         s = df[c].astype(float)
 
@@ -57,7 +57,17 @@ def make_window_features(df, cols, win=15):
         feats[f"{c}_max"] = s.rolling(win, center=True, min_periods=win).max()
         feats[f"{c}_min"] = s.rolling(win, center=True, min_periods=win).min()
 
-        feats[f"{c}_sclope"] = (s.shift(-win // 2) - s.shift(win // 2)) / win
+        # pente centrée
+        y2 = s.shift(-win // 2)
+        y1 = s.shift(win // 2)
+
+        if t is None:
+            feats[f"{c}_sclope"] = (y2 - y1) / float(win)
+        else:
+            t2 = t.shift(-win // 2)
+            t1 = t.shift(win // 2)
+            dt = (t2 - t1).replace(0.0, np.nan)
+            feats[f"{c}_sclope"] = (y2 - y1) / dt
 
     return pd.DataFrame(feats, index=df.index).dropna()
 

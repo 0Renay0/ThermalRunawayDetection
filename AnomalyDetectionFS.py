@@ -42,7 +42,7 @@ def build_features(
         "v_TP",
         "RCI",
     ]
-    X = make_window_features(df, base_cols, win=win)
+    X = make_window_features(df, base_cols, win=win, time_col=time_col)
 
     tp_corr = df[T_col].rolling(win, center=True, min_periods=win).corr(df[P_col])
     X["TP_corr"] = tp_corr.loc[X.index]
@@ -103,7 +103,8 @@ def detect_with_pretrained(
     data: pd.DataFrame,
     pretrained: dict,
     persist_k=3,
-    warmup_s=1000.0,
+    warmup_s=0.0,
+    use_gates=True,
 ):
     time_col = pretrained["cols"]["time_col"]
     T_col = pretrained["cols"]["T_col"]
@@ -126,6 +127,13 @@ def detect_with_pretrained(
     # warm up
     tX = df.loc[X.index, time_col].to_numpy()
     flag[tX <= warmup_s] = 0
+
+    if use_gates:
+        dTdt = df.loc[X.index, "dTdt"].to_numpy(float)
+        d2Tdt2 = df.loc[X.index, "d2Tdt2"].to_numpy(float)
+
+        gate = (d2Tdt2 > 0.0) & (dTdt > 0.0)  # simple
+        flag = flag * gate.astype(int)
 
     flag_persist = (
         pd.Series(flag, index=X.index).rolling(persist_k, min_periods=persist_k).sum()
