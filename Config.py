@@ -93,7 +93,7 @@ def UA_eff(t: float) -> float:
 
 
 # ======== Fault: Wrong initial temperature ========
-Tr0_fault = 105  # None for nominal
+Tr0_fault = None  # None for nominal
 
 
 def Tr0_F():
@@ -110,7 +110,7 @@ def CA0_F():
     return CF_CA0 if CF_CA0 is not None else 7.26
 
 
-CF_HP0 = None  # None for nominal
+CF_HP0 = 10.15  # None for nominal
 
 
 def HP0_F():

@@ -8,7 +8,7 @@ pretrained = joblib.load("pretrained_model.joblib")
 # df_fault = pd.read_csv("./Data/Nominal/5.csv")
 
 # ----- Fault: Initial temperature too high
-df_fault = pd.read_csv("./Data/Faults/fault_case_tr105.csv")
+# df_fault = pd.read_csv("./Data/Faults/fault_case_tr105.csv")
 # df_fault = pd.read_csv("./Data/Faults/fault_case_tr110.csv")
 
 # ----- Fault: Cooling degraded UA=5 after 10000s
@@ -18,7 +18,7 @@ df_fault = pd.read_csv("./Data/Faults/fault_case_tr105.csv")
 # df_fault = pd.read_csv("./Data/Faults/test.csv") # fault_case_UA_off
 
 # ----- Fault: Initial concentration of HP too high
-# df_fault = pd.read_csv("./Data/Faults/fault_case_HP0=10.15.csv")
+df_fault = pd.read_csv("./Data/Faults/fault_case_HP0=10.15.csv")
 
 
 df_res, det = detect_with_pretrained(
