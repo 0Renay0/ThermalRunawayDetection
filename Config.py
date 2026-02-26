@@ -57,7 +57,7 @@ def initial_state():
             0.0,
             7.41,
             0.0,
-            0.0,
+            nO2_gas_F(),
             0.0,
             0.0,
             0.0,
@@ -82,7 +82,7 @@ def time_grid():
 # ====================================================================
 
 # ======== Fault: arrêt du refroidissement ========
-cooling_stop_s = None  # None for nominal
+cooling_stop_s = 10000  # None for nominal
 
 
 def UA_eff(t: float) -> float:
@@ -110,9 +110,17 @@ def CA0_F():
     return CF_CA0 if CF_CA0 is not None else 7.26
 
 
-CF_HP0 = 10.15  # None for nominal
+CF_HP0 = None  # None for nominal
 
 
 def HP0_F():
     """Concentration initiale de HP pour le scénario de défaut."""
     return CF_HP0 if CF_HP0 is not None else 10.15
+
+
+CF_nO2_gas = None  # None for nominal
+
+
+def nO2_gas_F():
+    """Moles initiales de O2 dans le gaz pour le scénario de défaut."""
+    return CF_nO2_gas if CF_nO2_gas is not None else 0.0

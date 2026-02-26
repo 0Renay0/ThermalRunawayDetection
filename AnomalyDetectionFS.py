@@ -59,7 +59,7 @@ def fit_nominal_model(
     baseline_end_s=None,
     contamination=0.0001,
     random_state=0,
-    thr_quantile=0.95,
+    thr_quantile=0.99,
 ):
     """
     Fit the nominal model (IsolationForest) on the nominal datasets
@@ -102,7 +102,7 @@ def fit_nominal_model(
 def detect_with_pretrained(
     data: pd.DataFrame,
     pretrained: dict,
-    persist_k=3,
+    persist_k=1,
     warmup_s=0.0,
     use_gates=True,
 ):

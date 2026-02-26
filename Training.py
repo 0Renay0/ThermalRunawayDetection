@@ -15,10 +15,11 @@ pretrained = fit_nominal_model(
     time_col="Time",
     T_col="Tr_K",
     P_col="Pression_ideal_bar",
-    win=15,
-    contamination=1e-4,
-    thr_quantile=0.95,
+    win=31,
+    baseline_end_s=None,
+    contamination=1e-3,
     random_state=0,
+    thr_quantile=0.95,
 )
 
 print("Threshold nominal =", pretrained["threshold"])

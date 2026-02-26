@@ -5,24 +5,27 @@ from AnomalyDetectionFS import detect_with_pretrained
 pretrained = joblib.load("pretrained_model.joblib")
 
 # ----- Test with nominal scenario
-# df_fault = pd.read_csv("./Data/Nominal/5.csv")
+df_fault = pd.read_csv("./Data/Nominal/4.csv")
 
 # ----- Fault: Initial temperature too high
 # df_fault = pd.read_csv("./Data/Faults/fault_case_tr105.csv")
 # df_fault = pd.read_csv("./Data/Faults/fault_case_tr110.csv")
 
+# ----- Fault: Cooling degraded UA=8 after 10000s
+# df_fault = pd.read_csv("./Data/Faults/fault_case_UA=8.csv")
+
 # ----- Fault: Cooling degraded UA=5 after 10000s
 # df_fault = pd.read_csv("./Data/Faults/fault_case_UA=5.csv")
 
 # ----- Fault: Colling off after 10000s
-# df_fault = pd.read_csv("./Data/Faults/test.csv") # fault_case_UA_off
+# df_fault = pd.read_csv("./Data/Faults/fault_case_UA_off.csv") #
 
 # ----- Fault: Initial concentration of HP too high
-df_fault = pd.read_csv("./Data/Faults/fault_case_HP0=10.15.csv")
+# df_fault = pd.read_csv("./Data/Faults/fault_case_HP0=10.15.csv")
 
 
 df_res, det = detect_with_pretrained(
-    df_fault, pretrained, persist_k=1, warmup_s=1500, use_gates=True
+    df_fault, pretrained, persist_k=1, warmup_s=500, use_gates=False
 )
 
 # print("Threshold =", det["threshold"])
