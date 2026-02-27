@@ -82,7 +82,7 @@ def time_grid():
 # ====================================================================
 
 # ======== Fault: arrêt du refroidissement ========
-cooling_stop_s = 10000  # None for nominal
+cooling_stop_s = None  # None for nominal
 
 
 def UA_eff(t: float) -> float:
@@ -93,7 +93,7 @@ def UA_eff(t: float) -> float:
 
 
 # ======== Fault: Wrong initial temperature ========
-Tr0_fault = None  # None for nominal
+Tr0_fault = 105  # None for nominal
 
 
 def Tr0_F():
