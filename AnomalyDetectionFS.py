@@ -73,6 +73,7 @@ def fit_nominal_model(
         if baseline_end_s is None:
             X_list.append(X)
         else:
+            print("Baseline end time (s) =", baseline_end_s)
             mask = (df.loc[X.index, time_col] <= baseline_end_s).to_numpy()
             X_list.append(X.loc[X.index[mask]])
 
@@ -129,10 +130,13 @@ def detect_with_pretrained(
     flag[tX <= warmup_s] = 0
 
     if use_gates:
-        dTdt = df.loc[X.index, "dTdt"].to_numpy(float)
+        # dTdt = df.loc[X.index, "dTdt"].to_numpy(float)
         d2Tdt2 = df.loc[X.index, "d2Tdt2"].to_numpy(float)
+        # dPdt = df.loc[X.index, "dPdt"].to_numpy(float)
+        d2Pdt2 = df.loc[X.index, "d2Pdt2"].to_numpy(float)
 
-        gate = (d2Tdt2 > 0.0) & (dTdt > 0.0)  # simple
+        # gate = ( (d2Tdt2 > 0.0) & (dTdt > 0.0) ) & ((d2Pdt2 > 0.0) & (dPdt > 0.0))# simple
+        gate = (d2Tdt2 > 0.0) | (d2Pdt2 > 0.0)
         flag = flag * gate.astype(int)
 
     flag_persist = (
