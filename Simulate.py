@@ -99,14 +99,19 @@ def run():
     y0 = cfg.initial_state()
 
     sol = solve_ivp(rhs, t_span, y0, method="BDF", t_eval=t_eval)
+    if not sol.success:
+        raise RuntimeError("Echec de l'intégration ODE")
 
     data = postprocess(sol)
+    data.to_csv("simulated_data.csv", index=False)
+    data = cfg.add_measurement_noise(data)  # add noise if enabled in config
+    data.to_csv("simulated_data_noisy.csv", index=False)
 
     # export data
-    """out_xlsx = "Ver2_Question6.xlsx"
+    """out_csv = "simulated_data.xlsx"
     with pd.ExcelWriter(out_xlsx, engine="xlsxwriter") as writer:
         data.to_excel(writer, sheet_name="Sheet1", index=False)"""
-    data.to_csv("simulated_data.csv", index=False)
+    # data.to_csv("simulated_data.csv", index=False)
 
     # print(data.head())
     t = data["Time"].to_numpy()
@@ -124,12 +129,16 @@ def run():
     axs[0, 0].legend(loc="upper right")
 
     axs[0, 1].plot(t, data["Tr_C"].to_numpy(), "b+", label="Tr")
+    axs[0, 1].plot(t, data["Tr_C_meas"].to_numpy(), "r+", label="Tr_meas")
     axs[0, 1].set_xlabel("Time (s)")
     axs[0, 1].set_ylabel("Temperature (°C)")
     axs[0, 1].legend(loc="upper right")
     axs[0, 1].set_title("Temperature over time")
 
     axs[1, 0].plot(t, data["Pression_ideal_bar"].to_numpy(), "r2", label="Pressure")
+    axs[1, 0].plot(
+        t, data["Pression_ideal_bar_meas"].to_numpy(), "b2", label="Pressure meas"
+    )
     axs[1, 0].plot(t, data["VP_mix_bar"].to_numpy(), "b2", label="Vapor Pressure")
     axs[1, 0].set_xlabel("Time (s)")
     axs[1, 0].set_ylabel("Pressure (bar)")
