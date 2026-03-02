@@ -91,6 +91,39 @@ MEAS_SIGMA_T_K = 0.2  # In Kelvin
 MEAS_SIGMA_P_BAR = 0.01  # In bar
 
 
+def add_measurement_noise(
+    df,
+    enable=MEAS_NOISE_ENABLE,
+    sigma_T=MEAS_SIGMA_T_K,
+    sigma_P=MEAS_SIGMA_P_BAR,
+    seed=MEAS_NOISE_SEED,
+):
+    """
+    Ajoute un bruit gaussien sur les sorties de température et pression.
+    Le bruit est ajouté uniquement sur les colonnes de sortie,
+    donc n'affecte PAS l'intégration ODE.
+    """
+    if not enable:
+        return df  # No noise, return original DataFrame
+
+    rng = np.random.default_rng(seed)
+
+    df_noisy = df.copy()
+
+    # --- Température ---
+    if "Tr_K" in df_noisy.columns:
+        noise_T = rng.normal(0, sigma_T, size=len(df_noisy))
+        df_noisy["Tr_K_meas"] = df_noisy["Tr_K"] + noise_T
+        df_noisy["Tr_C_meas"] = df_noisy["Tr_K_meas"] - 273.15
+
+    # --- Pression ---
+    if "Pression_ideal_bar" in df_noisy.columns:
+        noise_P = rng.normal(0, sigma_P, size=len(df_noisy))
+        df_noisy["Pression_ideal_bar_meas"] = df_noisy["Pression_ideal_bar"] + noise_P
+
+    return df_noisy
+
+
 # ====================================================================
 #                      Scenarios de défauts
 # ====================================================================
