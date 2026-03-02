@@ -78,6 +78,20 @@ def time_grid():
 
 
 # ====================================================================
+#                      Bruits de mesure
+# ====================================================================
+
+MEAS_NOISE_ENABLE = True  # True for enabling measurement noise, False for clean data
+MEAS_NOISE_SEED = (
+    12345  # Seed for reproducibility of measurement noise (None for random)
+)
+
+# Standard deviations for measurement noise (assumed Gaussian)
+MEAS_SIGMA_T_K = 0.2  # In Kelvin
+MEAS_SIGMA_P_BAR = 0.01  # In bar
+
+
+# ====================================================================
 #                      Scenarios de défauts
 # ====================================================================
 
