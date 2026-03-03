@@ -4,7 +4,8 @@ import os
 from scipy.integrate import solve_ivp
 from Simulate import postprocess
 from ode_model import rhs
-
+import numpy as np
+import pandas as pd
 # Helpers for file name
 
 
@@ -43,7 +44,7 @@ def reset_params(*, PN2_nominal=10 * 100000.0):
     cfg.CF_nO2_gas = None
 
 
-def run_one_sceario(ovverides: dict, out_dir, filename_tag: str, noisy: bool = False):
+def run_one_scenario(ovverides: dict, out_dir, filename_tag: str, noisy: bool = False):
     """Lance une simulation pour un scénario donné et exporte les données."""
     os.makedirs(out_dir, exist_ok=True)
 
@@ -80,3 +81,65 @@ def run_one_sceario(ovverides: dict, out_dir, filename_tag: str, noisy: bool = F
     out.to_csv(out_path, index=False)
 
     return out_path
+
+
+# Genérer tous les scénarios
+def main():
+    out_dir = "./data"
+
+    # plage de variations
+    CA0_range = np.linspace(6.5, 8.0, 6)  # mol/L
+    HP0_range = np.linspace(9.0, 11.5, 6)  # mol/L
+    Tr0_C_range = np.linspace(85, 110, 6)  # °C
+    PN2_bar_range = np.linspace(8, 12, 5)  # bar
+    nO2_gas_range = np.linspace(0.0, 0.5, 6)  # mol
+
+    PN2_Pa_range = PN2_bar_range * 1e5
+
+    mode = "one_at_a_time"
+
+    PN2_nominal = 10.0 * 1e5
+
+    paths = []
+
+    try:
+        if mode == "one_at_a_time":
+            for v in CA0_range:
+                reset_params(PN2_nominal=PN2_nominal)
+                tag = f"CA0_{_safe_float_str(v)}"
+                paths.append(run_one_scenario({"CA0": float(v)}, out_dir, tag))
+
+            for v in HP0_range:
+                reset_params(PN2_nominal=PN2_nominal)
+                tag = f"HP0_{_safe_float_str(v)}"
+                paths.append(run_one_scenario({"HP0": float(v)}, out_dir, tag))
+
+            for v in Tr0_C_range:
+                reset_params(PN2_nominal=PN2_nominal)
+                tag = f"Tr0C_{_safe_float_str(v)}"
+                paths.append(run_one_scenario({"Tr0_C": float(v)}, out_dir, tag))
+
+            for v in PN2_Pa_range:
+                reset_params(PN2_nominal=PN2_nominal)
+                tag = f"PN2Pa_{_safe_float_str(v)}"
+                paths.append(run_one_scenario({"PN2_Pa": float(v)}, out_dir, tag))
+
+            for v in nO2_gas_range:
+                reset_params(PN2_nominal=PN2_nominal)
+                tag = f"nO2gas_{_safe_float_str(v)}"
+                paths.append(run_one_scenario({"nO2_gas": float(v)}, out_dir, tag))
+
+        else:
+            raise ValueError("Only one mode exists! One at a time")
+    finally:
+        reset_params(PN2_nominal=PN2_nominal)
+
+    print(f"[OK] Création de scenarios - {len(paths)} fichiers écrit dans {out_dir}")
+
+    pd.DataFrame({"file": paths}).to_csv(
+        os.path.join(out_dir, "index.csv"), index=False
+    )
+
+
+if __name__ == "__main__":
+    main()
