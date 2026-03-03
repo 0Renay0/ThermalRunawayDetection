@@ -85,7 +85,7 @@ def run_one_scenario(ovverides: dict, out_dir, filename_tag: str, noisy: bool = 
 
 # Genérer tous les scénarios
 def main():
-    out_dir = "./data"
+    out_dir = "./Data/Simulated"
 
     # plage de variations
     CA0_range = np.linspace(6.5, 8.0, 6)  # mol/L
@@ -107,27 +107,37 @@ def main():
             for v in CA0_range:
                 reset_params(PN2_nominal=PN2_nominal)
                 tag = f"CA0_{_safe_float_str(v)}"
-                paths.append(run_one_scenario({"CA0": float(v)}, out_dir, tag))
+                paths.append(
+                    run_one_scenario({"CA0": float(v)}, out_dir, tag, noisy=True)
+                )
 
             for v in HP0_range:
                 reset_params(PN2_nominal=PN2_nominal)
                 tag = f"HP0_{_safe_float_str(v)}"
-                paths.append(run_one_scenario({"HP0": float(v)}, out_dir, tag))
+                paths.append(
+                    run_one_scenario({"HP0": float(v)}, out_dir, tag, noisy=True)
+                )
 
             for v in Tr0_C_range:
                 reset_params(PN2_nominal=PN2_nominal)
                 tag = f"Tr0C_{_safe_float_str(v)}"
-                paths.append(run_one_scenario({"Tr0_C": float(v)}, out_dir, tag))
+                paths.append(
+                    run_one_scenario({"Tr0_C": float(v)}, out_dir, tag, noisy=True)
+                )
 
             for v in PN2_Pa_range:
                 reset_params(PN2_nominal=PN2_nominal)
                 tag = f"PN2Pa_{_safe_float_str(v)}"
-                paths.append(run_one_scenario({"PN2_Pa": float(v)}, out_dir, tag))
+                paths.append(
+                    run_one_scenario({"PN2_Pa": float(v)}, out_dir, tag, noisy=True)
+                )
 
             for v in nO2_gas_range:
                 reset_params(PN2_nominal=PN2_nominal)
                 tag = f"nO2gas_{_safe_float_str(v)}"
-                paths.append(run_one_scenario({"nO2_gas": float(v)}, out_dir, tag))
+                paths.append(
+                    run_one_scenario({"nO2_gas": float(v)}, out_dir, tag, noisy=True)
+                )
 
         else:
             raise ValueError("Only one mode exists! One at a time")
