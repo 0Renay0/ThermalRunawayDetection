@@ -28,3 +28,11 @@ def set_params(*, CA0=None, HP0=None, Tr0_C=None, PN2_Pa=None, nO2_gas=None):
     if PN2_Pa is not None:
         cfg.PN2 = PN2_Pa
         cfg.CF_nO2_gas = nO2_gas
+
+    def reset_params(*, PN2_nominal=10 * 100000.0):
+        """Réinitialise les paramètres à leurs valeurs nominales."""
+        cfg.CF_CA0 = None
+        cfg.CF_HP0 = None
+        cfg.Tr0_fault = None
+        cfg.PN2 = float(PN2_nominal)
+        cfg.CF_nO2_gas = None
