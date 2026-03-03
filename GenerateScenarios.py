@@ -87,12 +87,12 @@ def run_one_scenario(ovverides: dict, out_dir, filename_tag: str, noisy: bool = 
 def main():
     out_dir = "./Data/Simulated"
 
-    # plage de variations
-    CA0_range = np.linspace(6.5, 8.0, 6)  # mol/L
-    HP0_range = np.linspace(9.0, 11.5, 6)  # mol/L
-    Tr0_C_range = np.linspace(85, 110, 6)  # °C
-    PN2_bar_range = np.linspace(8, 12, 5)  # bar
-    nO2_gas_range = np.linspace(0.0, 0.5, 6)  # mol
+    # plage de variations [7.26, 9.15, 0, 0, 7.41, 0, 0, 0,0,0,0,90,Tr0, PN2]
+    CA0_range = np.linspace(6.5, 9.5, 30)  # mol/L
+    HP0_range = np.linspace(8.5, 11.5, 30)  # mol/L
+    Tr0_C_range = np.linspace(65.0, 105, 50)  # °C
+    PN2_bar_range = np.linspace(8.0, 20, 30)  # bar
+    nO2_gas_range = np.linspace(0.0, 1.5, 15)  # mol
 
     PN2_Pa_range = PN2_bar_range * 1e5
 
