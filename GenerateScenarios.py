@@ -6,9 +6,11 @@ from Simulate import postprocess
 from ode_model import rhs
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import glob
+
+
 # Helpers for file name
-
-
 def _safe_float_str(x: float) -> str:
     """Format court et sûr pour noms de fichiers (pas de . ni d'espaces)."""
     s = f"{float(x):.6g}"
@@ -151,5 +153,43 @@ def main():
     )
 
 
+def plot_scenario(files):
+    if not files:
+        print("Aucun fichier trouvé avec le pattern scenario_*.csv")
+        return
+
+    # --- Pression ---
+    plt.figure()
+    for f in files:
+        df = pd.read_csv(f)
+        plt.plot(df["Time"].to_numpy(), df["Pression_ideal_bar"].to_numpy())
+
+    plt.xlabel("Time")
+    plt.ylabel("Pression (bar)")
+    plt.title("Comparaison des scénarios - Pression")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    # --- Température ---
+    plt.figure()
+    for f in files:
+        df = pd.read_csv(f)
+        plt.plot(df["Time"].to_numpy(), df["Tr_C"].to_numpy())
+
+    plt.xlabel("Time")
+    plt.ylabel("Température (°C)")
+    plt.title("Comparaison des scénarios - Température")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
 if __name__ == "__main__":
     main()
+
+    # plot scenario
+    files = glob.glob("Data/Simulated/scenario_*.csv")
+    plot_scenario(files=files)
