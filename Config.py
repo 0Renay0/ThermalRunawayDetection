@@ -73,7 +73,7 @@ def initial_state():
 # ---------- Grille de simulation ----------
 def time_grid():
     t_span = (0.0, 50000.0)
-    t_eval = np.linspace(t_span[0], t_span[1], 501)
+    t_eval = np.linspace(t_span[0], t_span[1], 50000)
     return t_span, t_eval
 
 
