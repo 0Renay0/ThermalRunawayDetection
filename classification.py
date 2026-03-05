@@ -48,6 +48,19 @@ def _safe_gradient(y: np.ndarray, x: np.ndarray) -> np.ndarray:
     return np.gradient(y, x)
 
 
+def _first_true_time(t: np.ndarray, mask: np.ndarray) -> Optional[float]:
+    """Retourne le premier temps où mask est True, sinon None."""
+    if mask is None or len(mask) == 0:
+        return None
+    idx = np.flatnonzero(mask)
+    return float(t[idx[0]]) if len(idx) else None
+
+
+def _time_to_index(t: np.ndarray, t_detect: float) -> int:
+    """Premier index i tel que t[i] >= t_detect."""
+    return int(np.searchsorted(t, t_detect, side="left"))
+
+
 # --------------------------- critères ---------------------------
 @dataclass
 class CriterionResult:
@@ -270,6 +283,36 @@ def classify_file(
     ae = criterion_adler_enig(x, T, smooth_window=smooth_window, min_frac=min_frac)
     hj = criterion_hub_jones(t, T, Tw, smooth_window=smooth_window, min_frac=min_frac)
 
+    # ======================================================
+    # Calcul des temps de détection (pour créer la colonne label)
+    # ======================================================
+
+    T_s = _moving_average(T, smooth_window)
+    Tw_s = _moving_average(Tw, smooth_window)
+
+    dTdt = _safe_gradient(T_s, t)
+    d2Tdt2 = _safe_gradient(dTdt, t)
+    dDelta_dt = _safe_gradient(T_s - Tw_s, t)
+
+    mask_tb = (dTdt > 0) & (d2Tdt2 > 0)
+    mask_hj = (d2Tdt2 > 0) & (dDelta_dt > 0)
+
+    t_tb = _first_true_time(t, mask_tb) if tb.triggered else None
+    t_hj = _first_true_time(t, mask_hj) if hj.triggered else None
+
+    # détection pression
+    t_p = None
+    try:
+        P_bar, _ = _get_pressure_bar(df)
+        mask_p = P_bar > p_fault_bar
+        t_p = _first_true_time(t, mask_p)
+    except Exception:
+        pass
+
+    # temps de détection final
+    candidates = [x for x in [t_tb, t_hj, t_p] if x is not None]
+    t_detect = min(candidates) if candidates else None
+
     votes = int(tb.triggered) + int(ae.triggered) + int(hj.triggered)
     label = 1 if votes >= 2 else 0
 
@@ -284,6 +327,19 @@ def classify_file(
         # si pas de colonne pression, on n'applique pas la règle
         p_max = float("nan")
         p_over_100 = 0
+
+    # ======================================================
+    # Création de la colonne label
+    # ======================================================
+
+    df_out = df.copy()
+    df_out["label"] = 0
+
+    if label == 1 and t_detect is not None:
+        i0 = _time_to_index(t, t_detect)
+        df_out.loc[df_out.index[i0] :, "label"] = 1
+
+    df_out.to_csv(path, index=False)
 
     return ScenarioClassification(
         file=os.path.basename(path),
