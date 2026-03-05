@@ -5,6 +5,7 @@ from typing import Dict, Optional, Tuple
 import Config as cfg
 import os
 import shutil
+import glob
 
 
 # Helpers
@@ -373,3 +374,123 @@ def _get_pressure_bar(df: pd.DataFrame) -> Tuple[np.ndarray, str]:
             return p, col
 
     raise KeyError("Aucune colonne pression trouvée (ex: Pression_ideal_bar).")
+
+
+def plot_phase_plane_TP(
+    nominal_dir: str = "./Nominal",
+    fault_dir: str = "./Faults",
+    pattern: str = "*.csv",
+    out_path: Optional[str] = None,
+    show: bool = True,
+    max_files_per_class: Optional[int] = None,
+    alpha: float = 0.6,
+    lw: float = 1.0,
+) -> None:
+    """Plot du plan de phase Température (°C) vs Pression (bar).
+
+    - Nominal en bleu
+    - Faults en rouge
+    - Sans legend / label (comme demandé)
+    """
+    import matplotlib.pyplot as plt
+
+    def _list_csv(d: str) -> list[str]:
+        paths = sorted(glob.glob(os.path.join(d, pattern)))
+        if max_files_per_class is not None:
+            paths = paths[: int(max_files_per_class)]
+        return paths
+
+    nom_files = _list_csv(nominal_dir)
+    flt_files = _list_csv(fault_dir)
+
+    if not nom_files and not flt_files:
+        print(
+            f"[WARN] Aucun fichier trouvé dans {nominal_dir} ni {fault_dir} (pattern={pattern})"
+        )
+        return
+
+    fig, ax = plt.subplots()
+
+    # Nominal -> bleu
+    for path in nom_files:
+        try:
+            df = pd.read_csv(path)
+            T_C, _ = _get_temperature_C(df)
+            P_bar, _ = _get_pressure_bar(df)
+            n = min(len(T_C), len(P_bar))
+            if n >= 2:
+                ax.plot(P_bar[:n], T_C[:n], color="blue", alpha=alpha, linewidth=lw)
+        except Exception as e:
+            print(f"[WARN] Plot nominal skip {os.path.basename(path)}: {e}")
+
+    # Faults -> rouge
+    for path in flt_files:
+        try:
+            df = pd.read_csv(path)
+            T_C, _ = _get_temperature_C(df)
+            P_bar, _ = _get_pressure_bar(df)
+            n = min(len(T_C), len(P_bar))
+            if n >= 2:
+                ax.plot(P_bar[:n], T_C[:n], color="red", alpha=alpha, linewidth=lw)
+        except Exception as e:
+            print(f"[WARN] Plot faults skip {os.path.basename(path)}: {e}")
+
+    ax.set_xlabel("Pression (bar)")
+    ax.set_ylabel("Température (°C)")
+    ax.set_title("Plan de phase T–P (Nominal=bleu, Faults=rouge)")
+
+    # IMPORTANT: pas de legend => on n'appelle pas ax.legend()
+
+    ax.grid(True, alpha=0.2)
+
+    fig.tight_layout()
+
+    if out_path:
+        fig.savefig(out_path, dpi=200)
+        print(f"[OK] Figure sauvegardée: {out_path}")
+
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+
+def reset_outputs_to_data_dir(
+    data_dir: str, nominal_dir: str, fault_dir: str, pattern: str = "*.csv"
+) -> None:
+    os.makedirs(data_dir, exist_ok=True)
+
+    for src_dir in (nominal_dir, fault_dir):
+        if not os.path.isdir(src_dir):
+            continue
+
+        for f in glob.glob(os.path.join(src_dir, pattern)):
+            base = os.path.basename(f)
+
+            # Évite de remonter des fichiers résultats éventuels
+            if base in {"classification_summary.csv", "index.csv"}:
+                continue
+
+            dst = os.path.join(data_dir, base)
+
+            # si conflit de nom dans data_dir, on suffixe
+            if os.path.exists(dst):
+                b, ext = os.path.splitext(base)
+                i = 1
+                while True:
+                    cand = os.path.join(data_dir, f"{b}__reset{i}{ext}")
+                    if not os.path.exists(cand):
+                        dst = cand
+                        break
+                    i += 1
+
+            shutil.move(f, dst)
+
+    # Optionnel: nettoyer les dossiers vides
+    # (tu peux commenter si tu veux les garder)
+    for d in (nominal_dir, fault_dir):
+        try:
+            if os.path.isdir(d) and not os.listdir(d):
+                os.rmdir(d)
+        except Exception:
+            pass
