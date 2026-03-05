@@ -128,3 +128,53 @@ def criterion_thomas_bowes(
             "max_d2Tdt2": float(np.nanmax(d2Tdt2)) if len(d2Tdt2) else 0.0,
         },
     )
+
+
+def criterion_alder_enig(
+    x: Optional[np.ndarray],
+    T: np.ndarray,
+    smooth_window: int = 1,
+    min_frac: float = 0.001,
+) -> CriterionResult:
+    """Adler & Enig: runaway si dT/dx>0 ET d²T/dx²>0."""
+    if x is None or len(x) < 3 or np.allclose(x, x[0]):
+        return CriterionResult(
+            triggered=False,
+            score=0.0,
+            details={"available": 0.0, "reason": 1.0},
+        )
+
+    # S'assurer que x est croissant pour dériver dans le plan T-x
+    idx = np.argsort(x)
+    x2 = x[idx]
+    T2 = _moving_average(T[idx], smooth_window)
+
+    # Retirer les doublons (gradient peut diverger)
+    uniq = np.concatenate(([True], np.diff(x2) > 1e-12))
+    x2 = x2[uniq]
+    T2 = T2[uniq]
+
+    if len(x2) < 3:
+        return CriterionResult(
+            triggered=False,
+            score=0.0,
+            details={"available": 0.0, "reason": 2.0},
+        )
+
+    dTdx = np.gradient(T2, x2)
+    d2Tdx2 = np.gradient(dTdx, x2)
+
+    mask = (dTdx > 0) & (d2Tdx2 > 0)
+    frac = float(np.mean(mask)) if len(mask) else 0.0
+    triggered = frac >= float(min_frac)
+
+    return CriterionResult(
+        triggered=triggered,
+        score=frac,
+        details={
+            "available": 1.0,
+            "min_frac": float(min_frac),
+            "max_dTdx": float(np.nanmax(dTdx)) if len(dTdx) else 0.0,
+            "max_d2Tdx2": float(np.nanmax(d2Tdx2)) if len(d2Tdx2) else 0.0,
+        },
+    )
