@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
+import Config as cfg
 
 
 # Helpers
@@ -176,5 +177,53 @@ def criterion_alder_enig(
             "min_frac": float(min_frac),
             "max_dTdx": float(np.nanmax(dTdx)) if len(dTdx) else 0.0,
             "max_d2Tdx2": float(np.nanmax(d2Tdx2)) if len(d2Tdx2) else 0.0,
+        },
+    )
+
+
+def _get_Tw(df: pd.DataFrame, T: np.ndarray) -> np.ndarray:
+    """Température de jaquette Tw (K).
+
+    - si Tw_K/Tw_C existe dans le CSV, l'utiliser
+    - sinon, essayer cfg.Tj (K) si Config est importable
+    - sinon, approx: Tw = T[0]
+    """
+    if "Tw_K" in df.columns:
+        return _to_numpy(df["Tw_K"])
+    if "Tw_C" in df.columns:
+        return _to_numpy(df["Tw_C"]) + 273.15
+
+    if cfg is not None and hasattr(cfg, "Tj"):
+        return np.full_like(T, float(getattr(cfg, "Tj")))
+
+    return np.full_like(T, float(T[0]))
+
+
+def criterion_hub_jones(
+    t: np.ndarray,
+    T: np.ndarray,
+    Tw: np.ndarray,
+    smooth_window: int = 1,
+    min_frac: float = 0.001,
+) -> CriterionResult:
+    """Hub & Jones: runaway si d²T/dt²>0 ET d(T-Tw)/dt>0."""
+    T_s = _moving_average(T, smooth_window)
+    Tw_s = _moving_average(Tw, smooth_window)
+
+    dTdt = _safe_gradient(T_s, t)
+    d2Tdt2 = _safe_gradient(dTdt, t)
+    dDelta_dt = _safe_gradient(T_s - Tw_s, t)
+
+    mask = (d2Tdt2 > 0) & (dDelta_dt > 0)
+    frac = float(np.mean(mask)) if len(mask) else 0.0
+    triggered = frac >= float(min_frac)
+
+    return CriterionResult(
+        triggered=triggered,
+        score=frac,
+        details={
+            "min_frac": float(min_frac),
+            "max_d2Tdt2": float(np.nanmax(d2Tdt2)) if len(d2Tdt2) else 0.0,
+            "max_dDelta_dt": float(np.nanmax(dDelta_dt)) if len(dDelta_dt) else 0.0,
         },
     )
