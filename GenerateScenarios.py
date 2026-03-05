@@ -19,7 +19,16 @@ def _safe_float_str(x: float) -> str:
     return s
 
 
-def set_params(*, CA0=None, HP0=None, Tr0_C=None, PN2_Pa=None, nO2_gas=None):
+def set_params(
+    *,
+    CA0=None,
+    HP0=None,
+    Tr0_C=None,
+    PN2_Pa=None,
+    nO2_gas=None,
+    cooling_stop_s=None,
+    UA_deg=None,
+):
     """
     Applique les paramètres dans config.py pour générer différents scénarios.
     CA0: Concentration initiale de CA (mol/L)
@@ -35,6 +44,11 @@ def set_params(*, CA0=None, HP0=None, Tr0_C=None, PN2_Pa=None, nO2_gas=None):
     if PN2_Pa is not None:
         cfg.PN2 = PN2_Pa
         cfg.CF_nO2_gas = nO2_gas
+    # défaut refroidissement
+    if cooling_stop_s is not None:
+        cfg.cooling_stop_s = float(cooling_stop_s)
+    if UA_deg is not None:
+        cfg.UA_deg = float(UA_deg)
 
 
 def reset_params(*, PN2_nominal=10 * 100000.0):
@@ -44,6 +58,8 @@ def reset_params(*, PN2_nominal=10 * 100000.0):
     cfg.Tr0_fault = None
     cfg.PN2 = float(PN2_nominal)
     cfg.CF_nO2_gas = None
+    cfg.cooling_stop_s = None
+    cfg.UA_deg = 0.0
 
 
 def run_one_scenario(ovverides: dict, out_dir, filename_tag: str, noisy: bool = False):
@@ -68,20 +84,27 @@ def run_one_scenario(ovverides: dict, out_dir, filename_tag: str, noisy: bool = 
 
     df = postprocess(sol)
     if noisy:
-        df = cfg.add_measurement_noise(df)
+        df_noisy = cfg.add_measurement_noise(df.copy())
+        # mais on remet CA/HP propres pour la conversion
+        for c in ["CA", "HP"]:
+            if c in df.columns and c in df_noisy.columns:
+                df_noisy[c] = df[c]
+        df = df_noisy
 
-    cols = ["Time"]
-    if "Tr_C" in df.columns:
-        cols.append("Tr_C")
-    if "Pression_ideal_bar" in df.columns:
-        cols.append("Pression_ideal_bar")
+    wanted = [
+        "Time",
+        "Tr_C",
+        "Pression_ideal_bar",
+        "CA",
+        "HP",
+    ]
 
+    # Garde seulement celles qui existent (robuste)
+    cols = [c for c in wanted if c in df.columns]
     out = df[cols].copy()
 
-    # Sauvegarder les données
     out_path = os.path.join(out_dir, f"scenario_{filename_tag}.csv")
     out.to_csv(out_path, index=False)
-
     return out_path
 
 
@@ -97,6 +120,8 @@ def main():
     nO2_gas_range = np.linspace(0.0, 1.5, 15)  # mol
 
     PN2_Pa_range = PN2_bar_range * 1e5
+    t_fault_values = np.arange(0, 50000 + 1, 5000)  # 0..50000 step 5000
+    UA_deg_values = np.arange(10, -1, -1)  # 10..0 step 1
 
     mode = "one_at_a_time"
 
@@ -140,6 +165,17 @@ def main():
                 paths.append(
                     run_one_scenario({"nO2_gas": float(v)}, out_dir, tag, noisy=True)
                 )
+
+            for t_fault in t_fault_values:
+                for UA_d in UA_deg_values:
+                    reset_params(PN2_nominal=PN2_nominal)
+
+                    tag = f"Cooling_t{int(t_fault)}_UAdeg{int(UA_d)}"
+                    overrides = {
+                        "cooling_stop_s": float(t_fault),
+                        "UA_deg": float(UA_d),
+                    }
+                    paths.append(run_one_scenario(overrides, out_dir, tag, noisy=True))
 
         else:
             raise ValueError("Only one mode exists! One at a time")

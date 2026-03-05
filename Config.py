@@ -129,14 +129,15 @@ def add_measurement_noise(
 # ====================================================================
 
 # ======== Fault: arrêt du refroidissement ========
-cooling_stop_s = 8  # None for nominal
+cooling_stop_s = None  # None for nominal
+UA_deg = 0.0  # valeur de UA degradation = ]10.0,0.0]/arret = 0.0
 
 
 def UA_eff(t: float) -> float:
     """UA effectif (refroidissement ON avant cooling_stop_s, OFF après)."""
     if cooling_stop_s is None:
         return UA
-    return UA if t < cooling_stop_s else 0
+    return UA if t < cooling_stop_s else UA_deg
 
 
 # ======== Fault: Wrong initial temperature ========
