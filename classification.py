@@ -1,11 +1,15 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
 import Config as cfg
 import os
 import shutil
 import glob
+import argparse
+
+from dataclasses import dataclass
+from typing import Dict, Optional, Tuple
 
 
 # Helpers
@@ -27,7 +31,7 @@ def _moving_average(x: np.ndarray, window: int) -> np.ndarray:
     return np.convolve(xpad, kernel, mode="valid")
 
 
-def _safe_gradient(y: np.gradient, x: np.ndarray) -> np.ndarray:
+def _safe_gradient(y: np.ndarray, x: np.ndarray) -> np.ndarray:
     if len(y) < 3:
         return np.zeros_like(y)
 
@@ -53,13 +57,11 @@ class CriterionResult:
 
 
 def _get_temperature(df: pd.DataFrame) -> Tuple[np.ndarray, str]:
-    """
-    Retourne T en Kelvin et le nom de la colonne source
-    """
+    """Retourne T en Kelvin et le nom de la colonne source."""
     if "Tr_K" in df.columns:
         return _to_numpy(df["Tr_K"]), "Tr_K"
     if "Tr_C" in df.columns:
-        return _to_numpy(["Tr_C"]) + 273.15, "Tr_C"
+        return _to_numpy(df["Tr_C"]) + 273.15, "Tr_C"
     if "Tr_K_meas" in df.columns:
         return _to_numpy(df["Tr_K_meas"]), "Tr_K_meas"
     if "Tr_C_meas" in df.columns:
@@ -297,23 +299,24 @@ def classify_file(
         p_over_100=p_over_100,
     )
 
-    def move_file(src: str, dst_dir: str, dry_run: bool = False) -> str:
-        os.makedirs(dst_dir, exist_ok=True)
-        dst = os.path.join(dst_dir, os.path.basename(src))
-        if dry_run:
-            return dst
-        # Si un fichier du même nom existe déjà, on suffixe
-        if os.path.exists(dst):
-            base, ext = os.path.splitext(os.path.basename(src))
-            i = 1
-            while True:
-                cand = os.path.join(dst_dir, f"{base}__{i}{ext}")
-                if not os.path.exists(cand):
-                    dst = cand
-                    break
-                i += 1
-        shutil.move(src, dst)
+
+def move_file(src: str, dst_dir: str, dry_run: bool = False) -> str:
+    os.makedirs(dst_dir, exist_ok=True)
+    dst = os.path.join(dst_dir, os.path.basename(src))
+    if dry_run:
         return dst
+    # Si un fichier du même nom existe déjà, on suffixe
+    if os.path.exists(dst):
+        base, ext = os.path.splitext(os.path.basename(src))
+        i = 1
+        while True:
+            cand = os.path.join(dst_dir, f"{base}__{i}{ext}")
+            if not os.path.exists(cand):
+                dst = cand
+                break
+            i += 1
+    shutil.move(src, dst)
+    return dst
 
 
 def _get_temperature_C(df: pd.DataFrame) -> Tuple[np.ndarray, str]:
@@ -373,7 +376,7 @@ def _get_pressure_bar(df: pd.DataFrame) -> Tuple[np.ndarray, str]:
             # sinon on suppose déjà en bar
             return p, col
 
-    raise KeyError("Aucune colonne pression trouvée (ex: Pression_ideal_bar).")
+    raise KeyError("Aucune colonne pression trouvée.")
 
 
 def plot_phase_plane_TP(
@@ -390,7 +393,7 @@ def plot_phase_plane_TP(
 
     - Nominal en bleu
     - Faults en rouge
-    - Sans legend / label (comme demandé)
+    - Sans legend / label
     """
     import matplotlib.pyplot as plt
 
@@ -438,11 +441,7 @@ def plot_phase_plane_TP(
     ax.set_xlabel("Pression (bar)")
     ax.set_ylabel("Température (°C)")
     ax.set_title("Plan de phase T–P (Nominal=bleu, Faults=rouge)")
-
-    # IMPORTANT: pas de legend => on n'appelle pas ax.legend()
-
     ax.grid(True, alpha=0.2)
-
     fig.tight_layout()
 
     if out_path:
@@ -486,11 +485,163 @@ def reset_outputs_to_data_dir(
 
             shutil.move(f, dst)
 
-    # Optionnel: nettoyer les dossiers vides
-    # (tu peux commenter si tu veux les garder)
     for d in (nominal_dir, fault_dir):
         try:
             if os.path.isdir(d) and not os.listdir(d):
                 os.rmdir(d)
         except Exception:
             pass
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(
+        description="Classification des scénarios (runaway) avec vote 2/3."
+    )
+    p.add_argument(
+        "--data_dir",
+        default="./Data/Simulated",
+        help="Dossier contenant les scénarios CSV",
+    )
+    p.add_argument(
+        "--nominal_dir",
+        default="./Data/Simulated/Nominal",
+        help="Dossier de sortie pour label=0",
+    )
+    p.add_argument(
+        "--fault_dir",
+        default="./Data/Simulated/Faults",
+        help="Dossier de sortie pour label=1",
+    )
+    p.add_argument("--pattern", default="*.csv", help="Motif glob des fichiers")
+    p.add_argument(
+        "--p_fault_bar", type=float, default=100.0, help="Seuil pression (bar) => Fault"
+    )
+    p.add_argument(
+        "--reset",
+        action="store_true",
+        help="Avant classification: remonte les CSV de Nominal/Faults vers data_dir (reclassement propre)",
+    )
+    p.add_argument(
+        "--smooth_window",
+        type=int,
+        default=21,
+        help="Fenêtre de lissage (moyenne glissante) en # d'échantillons (>=1)",
+    )
+
+    p.add_argument(
+        "--min_frac",
+        type=float,
+        default=0.05,
+        help="Fraction minimale de points satisfaisant la condition pour déclencher un critère",
+    )
+
+    p.add_argument("--dry_run", action="store_true", help="Ne déplace pas les fichiers")
+
+    p.add_argument(
+        "--summary",
+        default="classification_summary.csv",
+        help="Nom du fichier récapitulatif CSV",
+    )
+
+    # ---- Options pour le plot ----
+    p.add_argument(
+        "--plot_tp",
+        action="store_true",
+        help="Génère le plot du plan de phase Température-Pression",
+    )
+
+    p.add_argument(
+        "--plot_out",
+        default="phase_plane_TP.png",
+        help="Nom du fichier image du plot",
+    )
+
+    args = p.parse_args()
+
+    if args.reset and not args.dry_run:
+        reset_outputs_to_data_dir(
+            data_dir=args.data_dir,
+            nominal_dir=args.nominal_dir,
+            fault_dir=args.fault_dir,
+            pattern=args.pattern,
+        )
+
+    pattern = os.path.join(args.data_dir, args.pattern)
+    files = sorted(glob.glob(pattern))
+
+    if not files:
+        print(f"[WARN] Aucun fichier trouvé: {pattern}")
+        return 1
+
+    rows = []
+
+    for f in files:
+        base = os.path.basename(f)
+
+        # ignorer les fichiers de sortie
+        if base in {args.summary, "index.csv"}:
+            print(f"[SKIP] {base} (fichier résultat)")
+            continue
+
+        # Skip rapide si pas de colonne temps
+        try:
+            df_test = pd.read_csv(f, nrows=1)
+            if not any(c in df_test.columns for c in ["Time", "time", "t", "temps"]):
+                print(f"[SKIP] {base} (pas de colonne temps)")
+                continue
+        except Exception:
+            print(f"[SKIP] {base} (lecture impossible)")
+            continue
+
+        # Classification
+        try:
+            res = classify_file(
+                f,
+                smooth_window=args.smooth_window,
+                min_frac=args.min_frac,
+                p_fault_bar=args.p_fault_bar,  # règle P>100bar => Fault, cas extreme
+            )
+        except Exception as e:
+            print(f"[ERROR] {base}: {e}")
+            continue
+
+        rows.append(res.__dict__)
+
+        target_dir = args.fault_dir if res.label == 1 else args.nominal_dir
+        _ = move_file(f, target_dir, dry_run=args.dry_run)
+
+        print(
+            f"[{'FAULT' if res.label == 1 else 'NOMINAL'}] {res.file} "
+            f"votes={res.votes} (TB={res.thomas_bowes}, AE={res.adler_enig}, HJ={res.hub_jones}) "
+            f"Pmax={res.p_max_bar:.2f} bar (P>{args.p_fault_bar:g}={res.p_over_100})"
+        )
+
+    # ---- Sauvegarde du résumé ----
+    if rows:
+        out = pd.DataFrame(rows)
+        out_path = os.path.join(args.data_dir, args.summary)
+
+        if args.dry_run:
+            print(f"[DRY_RUN] Récapitulatif non écrit: {out_path}")
+        else:
+            out.to_csv(out_path, index=False)
+            print(f"[OK] Récapitulatif écrit: {out_path}")
+
+    # ---- Plot du plan de phase T-P ----
+    if args.plot_tp:
+        try:
+            plot_phase_plane_TP(
+                nominal_dir=args.nominal_dir,
+                fault_dir=args.fault_dir,
+                pattern=args.pattern,
+                out_path=args.plot_out,
+                show=True,
+            )
+        except Exception as e:
+            print(f"[WARN] Plot T-P impossible: {e}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
