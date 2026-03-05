@@ -129,16 +129,18 @@ def run():
     axs[0, 0].legend(loc="upper right")
 
     axs[0, 1].plot(t, data["Tr_C"].to_numpy(), "b+", label="Tr")
-    axs[0, 1].plot(t, data["Tr_C_meas"].to_numpy(), "r+", label="Tr_meas")
+    if cfg.MEAS_NOISE_ENABLE:
+        axs[0, 1].plot(t, data["Tr_C_meas"].to_numpy(), "r+", label="Tr_meas")
     axs[0, 1].set_xlabel("Time (s)")
     axs[0, 1].set_ylabel("Temperature (°C)")
     axs[0, 1].legend(loc="upper right")
     axs[0, 1].set_title("Temperature over time")
 
     axs[1, 0].plot(t, data["Pression_ideal_bar"].to_numpy(), "r2", label="Pressure")
-    axs[1, 0].plot(
-        t, data["Pression_ideal_bar_meas"].to_numpy(), "b2", label="Pressure meas"
-    )
+    if cfg.MEAS_NOISE_ENABLE:
+        axs[1, 0].plot(
+            t, data["Pression_ideal_bar_meas"].to_numpy(), "b2", label="Pressure meas"
+        )
     axs[1, 0].plot(t, data["VP_mix_bar"].to_numpy(), "b2", label="Vapor Pressure")
     axs[1, 0].set_xlabel("Time (s)")
     axs[1, 0].set_ylabel("Pressure (bar)")

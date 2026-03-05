@@ -81,14 +81,14 @@ def time_grid():
 #                      Bruits de mesure
 # ====================================================================
 
-MEAS_NOISE_ENABLE = True  # True for enabling measurement noise, False for clean data
+MEAS_NOISE_ENABLE = False  # True for enabling measurement noise, False for clean data
 MEAS_NOISE_SEED = (
     12345  # Seed for reproducibility of measurement noise (None for random)
 )
 
 # Standard deviations for measurement noise (assumed Gaussian)
-MEAS_SIGMA_T_K = 0.2  # In Kelvin
-MEAS_SIGMA_P_BAR = 0.01  # In bar
+MEAS_SIGMA_T_K = 0.5  # In Kelvin
+MEAS_SIGMA_P_BAR = 0.1  # In bar
 
 
 def add_measurement_noise(
@@ -129,7 +129,7 @@ def add_measurement_noise(
 # ====================================================================
 
 # ======== Fault: arrêt du refroidissement ========
-cooling_stop_s = None  # None for nominal
+cooling_stop_s = 8  # None for nominal
 
 
 def UA_eff(t: float) -> float:
@@ -140,7 +140,7 @@ def UA_eff(t: float) -> float:
 
 
 # ======== Fault: Wrong initial temperature ========
-Tr0_fault = 105  # None for nominal
+Tr0_fault = None  # None for nominal
 
 
 def Tr0_F():
