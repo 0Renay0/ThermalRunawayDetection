@@ -3,6 +3,8 @@ import pandas as pd
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 import Config as cfg
+import os
+import shutil
 
 
 # Helpers
@@ -131,7 +133,7 @@ def criterion_thomas_bowes(
     )
 
 
-def criterion_alder_enig(
+def criterion_adler_enig(
     x: Optional[np.ndarray],
     T: np.ndarray,
     smooth_window: int = 1,
@@ -227,3 +229,147 @@ def criterion_hub_jones(
             "max_dDelta_dt": float(np.nanmax(dDelta_dt)) if len(dDelta_dt) else 0.0,
         },
     )
+
+
+# --------------------------- pipeline scénario ---------------------------
+
+
+@dataclass
+class ScenarioClassification:
+    file: str
+    label: int
+    votes: int
+    thomas_bowes: int
+    adler_enig: int
+    hub_jones: int
+    tb_score: float
+    ae_score: float
+    hj_score: float
+    p_max_bar: float
+    p_over_100: int
+
+
+def classify_file(
+    path: str,
+    smooth_window: int = 1,
+    min_frac: float = 0.001,
+    p_fault_bar: float = 100.0,
+) -> ScenarioClassification:
+    df = pd.read_csv(path)
+
+    t = _get_time(df)
+    T, _ = _get_temperature(df)
+    Tw = _get_Tw(df, T)
+    x = _infer_conversion(df)
+
+    # --- Critères thermiques ---
+    tb = criterion_thomas_bowes(t, T, smooth_window=smooth_window, min_frac=min_frac)
+    ae = criterion_adler_enig(x, T, smooth_window=smooth_window, min_frac=min_frac)
+    hj = criterion_hub_jones(t, T, Tw, smooth_window=smooth_window, min_frac=min_frac)
+
+    votes = int(tb.triggered) + int(ae.triggered) + int(hj.triggered)
+    label = 1 if votes >= 2 else 0
+
+    # --- Règle pression (override) ---
+    try:
+        P_bar, _ = _get_pressure_bar(df)
+        p_max = float(np.nanmax(P_bar)) if len(P_bar) else float("nan")
+        p_over_100 = int(np.isfinite(p_max) and (p_max > p_fault_bar))
+        if p_over_100:
+            label = 1  # override -> Fault
+    except Exception:
+        # si pas de colonne pression, on n'applique pas la règle
+        p_max = float("nan")
+        p_over_100 = 0
+
+    return ScenarioClassification(
+        file=os.path.basename(path),
+        label=label,
+        votes=votes,
+        thomas_bowes=int(tb.triggered),
+        adler_enig=int(ae.triggered),
+        hub_jones=int(hj.triggered),
+        tb_score=float(tb.score),
+        ae_score=float(ae.score),
+        hj_score=float(hj.score),
+        p_max_bar=p_max,
+        p_over_100=p_over_100,
+    )
+
+    def move_file(src: str, dst_dir: str, dry_run: bool = False) -> str:
+        os.makedirs(dst_dir, exist_ok=True)
+        dst = os.path.join(dst_dir, os.path.basename(src))
+        if dry_run:
+            return dst
+        # Si un fichier du même nom existe déjà, on suffixe
+        if os.path.exists(dst):
+            base, ext = os.path.splitext(os.path.basename(src))
+            i = 1
+            while True:
+                cand = os.path.join(dst_dir, f"{base}__{i}{ext}")
+                if not os.path.exists(cand):
+                    dst = cand
+                    break
+                i += 1
+        shutil.move(src, dst)
+        return dst
+
+
+def _get_temperature_C(df: pd.DataFrame) -> Tuple[np.ndarray, str]:
+    """Retourne T en °C (pour le plot) et le nom de la colonne source."""
+    if "Tr_C" in df.columns:
+        return _to_numpy(df["Tr_C"]), "Tr_C"
+    if "Tr_K" in df.columns:
+        return _to_numpy(df["Tr_K"]) - 273.15, "Tr_K"
+    if "Tr_C_meas" in df.columns:
+        return _to_numpy(df["Tr_C_meas"]), "Tr_C_meas"
+    if "Tr_K_meas" in df.columns:
+        return _to_numpy(df["Tr_K_meas"]) - 273.15, "Tr_K_meas"
+    raise KeyError("Aucune colonne température trouvée (Tr_C/Tr_K ou *_meas).")
+
+
+def _get_pressure_bar(df: pd.DataFrame) -> Tuple[np.ndarray, str]:
+    """Retourne la pression en bar et le nom de la colonne source.
+
+    Supporte plusieurs conventions usuelles.
+    """
+    # Cas direct en bar (ton cas: Pression_ideal_bar)
+    bar_cols = (
+        "Pression_ideal_bar",
+        "Pression_bar",
+        "Pressure_bar",
+        "P_bar",
+        "Pbar",
+        "pressure_bar",
+        "pression_bar",
+    )
+    for col in bar_cols:
+        if col in df.columns:
+            return _to_numpy(df[col]), col
+
+    # Cas en Pa -> conversion bar
+    pa_cols = (
+        "Pression_ideal_Pa",
+        "Pression_Pa",
+        "Pressure_Pa",
+        "P_Pa",
+        "Ppa",
+        "pressure_Pa",
+        "pression_Pa",
+        "P",
+        "Pressure",
+        "Pression",
+        "pressure",
+        "pression",
+    )
+    for col in pa_cols:
+        if col in df.columns:
+            p = _to_numpy(df[col])
+            # heuristique: si valeurs typiquement > 1e3, on suppose Pa
+            # (évite de convertir à tort des données déjà en bar)
+            if np.nanmax(p) > 1e3:
+                return p / 1e5, col  # 1 bar = 1e5 Pa
+            # sinon on suppose déjà en bar
+            return p, col
+
+    raise KeyError("Aucune colonne pression trouvée (ex: Pression_ideal_bar).")
